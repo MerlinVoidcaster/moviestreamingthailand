@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>MovieStreamingThailand</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: white;
+    }
+
+    header {
+      background: #000;
+      border-bottom: 1px solid #333;
+      padding: 20px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .header-inner {
+      max-width: 1200px;
+      margin: auto;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      justify-content: space-between;
+    }
+
+    .logo {
+      font-size: 24px;
+      font-weight: bold;
+      color: #e50914;
+      white-space: nowrap;
+    }
+
+    .search {
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .search input {
+      width: 100%;
+      padding: 12px 15px;
+      border-radius: 8px;
+      border: 1px solid #444;
+      background: #222;
+      color: white;
+      font-size: 15px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: auto;
+      padding: 30px 20px;
+    }
+
+    .hero {
+      background: linear-gradient(
+        135deg,
+        #1c1c1c,
+        #111
+      );
+
+      border: 1px solid #333;
+      border-radius: 14px;
+      padding: 35px;
+      margin-bottom: 30px;
+    }
+
+    .hero h1 {
+      margin-top: 0;
+      font-size: 38px;
+    }
+
+    .hero p {
+      color: #bbb;
+      max-width: 700px;
+      line-height: 1.6;
+    }
+
+    .movie-grid {
+      display: grid;
+      grid-template-columns: repeat(
+        auto-fill,
+        minmax(180px, 1fr)
+      );
+
+      gap: 20px;
+    }
+
+    .movie-card {
+      background: #1c1c1c;
+      border: 1px solid #333;
+      border-radius: 10px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .movie-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .movie-card img {
+      width: 100%;
+      height: 270px;
+      object-fit: cover;
+      display: block;
+      background: #222;
+    }
+
+    .movie-info {
+      padding: 15px;
+    }
+
+    .movie-info h3 {
+      margin: 0 0 8px;
+      font-size: 18px;
+    }
+
+    .movie-meta {
+      color: #aaa;
+      font-size: 13px;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 50px 20px;
+      color: #aaa;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 50px;
+      color: #aaa;
+    }
+
+    /* MOVIE MODAL */
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 100;
+      overflow-y: auto;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      width: 100%;
+      max-width: 900px;
+      background: #181818;
+      border: 1px solid #333;
+      border-radius: 14px;
+      padding: 25px;
+      position: relative;
+      margin: 30px 0;
+    }
+
+    .close {
+      position: absolute;
+      right: 20px;
+      top: 15px;
+      font-size: 28px;
+      cursor: pointer;
+      color: #aaa;
+    }
+
+    .close:hover {
+      color: white;
+    }
+
+    .movie-detail {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 25px;
+    }
+
+    .movie-detail img {
+      width: 100%;
+      border-radius: 10px;
+    }
+
+    .movie-detail h2 {
+      margin-top: 0;
+      font-size: 30px;
+    }
+
+    .detail-text {
+      color: #ccc;
+      line-height: 1.6;
+    }
+
+    .player {
+      margin-top: 30px;
+    }
+
+    video {
+      width: 100%;
+      max-height: 500px;
+      background: black;
+      border-radius: 10px;
+    }
+
+    .no-video {
+      background: #222;
+      border: 1px solid #333;
+      border-radius: 10px;
+      padding: 30px;
+      text-align: center;
+      color: #aaa;
+    }
+
+    @media (max-width: 700px) {
+
+      .header-inner {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .search {
+        max-width: none;
+      }
+
+      .hero {
+        padding: 25px;
+      }
+
+      .hero h1 {
+        font-size: 28px;
+      }
+
+      .movie-detail {
+        grid-template-columns: 1fr;
+      }
+
+      .movie-detail img {
+        max-width: 220px;
+      }
+
+    }
+  </style>
+
+</head>
+
+<body>
+
+<header>
+
+  <div class="header-inner">
+
+```
+<div class="logo">
+  MovieStreamingThailand
+</div>
+
+<div class="search">
+
+  <input
+    type="text"
+    id="searchInput"
+    placeholder="Search movies..."
+  >
+
+</div>
+```
+
+  </div>
+
+</header>
+
+<main class="container">
+
+  <section class="hero">
+
+```
+<h1>Watch Movies</h1>
+
+<p>
+  Browse our movie collection and watch
+  available movies online.
+</p>
+```
+
+  </section>
+
+  <h2>Movies</h2>
+
+  <div
+    id="movieGrid"
+    class="movie-grid"
+  >
+
+```
+<div class="loading">
+  Loading movies...
+</div>
+```
+
+  </div>
+
+</main>
+
+<!-- MOVIE MODAL -->
+
+<div
+  id="movieModal"
+  class="modal"
+>
+
+  <div class="modal-content">
+
+```
+<div
+  id="closeModal"
+  class="close"
+>
+  ×
+</div>
+
+<div
+  id="movieDetail"
+  class="movie-detail"
+></div>
+
+<div class="player">
+
+  <div id="videoContainer"></div>
+
+</div>
+```
+
+  </div>
+
+</div>
+
+<script>
+
+  /*
+   * SUPABASE
+   */
+
+  const SUPABASE_URL =
+    "https://oegphoppgsiojdjxrinv.supabase.co";
+
+
+  /*
+   * PUT YOUR EXISTING SUPABASE
+   * PUBLISHABLE KEY HERE.
+   *
+   * Do NOT use the service-role key.
+   */
+
+  const SUPABASE_PUBLISHABLE_KEY =
+    "sb_publishable_FsTvfKZdVHhuswq9Zt1dEA_b0_L_82N";
+
+
+  const supabaseClient =
+    supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_PUBLISHABLE_KEY
+    );
+
+
+  let allMovies = [];
+
+
+  /*
+   * LOAD PUBLISHED MOVIES
+   */
+
+  async function loadMovies() {
+
+    const movieGrid =
+      document.getElementById("movieGrid");
+
+
+    movieGrid.innerHTML =
+      '<div class="loading">Loading movies...</div>';
+
+
+    const {
+      data,
+      error
+    } =
+      await supabaseClient
+        .from("movies")
+        .select(
+          "id,title,description,poster_url,video_url,cast_members,genre,release_year"
+        )
+        .eq("published", true)
+        .order(
+          "created_at",
+          {
+            ascending: false
+          }
+        );
+
+
+    if (error) {
+
+      movieGrid.innerHTML =
+        '<div class="empty">' +
+        'Unable to load movies.<br><br>' +
+        escapeHtml(error.message) +
+        '</div>';
+
+      return;
+    }
+
+
+    allMovies = data || [];
+
+    displayMovies(allMovies);
+
+  }
+
+
+  /*
+   * DISPLAY MOVIES
+   */
+
+  function displayMovies(movies) {
+
+    const movieGrid =
+      document.getElementById("movieGrid");
+
+
+    if (!movies.length) {
+
+      movieGrid.innerHTML =
+        '<div class="empty">' +
+        'No published movies yet.' +
+        '</div>';
+
+      return;
+    }
+
+
+    movieGrid.innerHTML = "";
+
+
+    movies.forEach(movie => {
+
+      const card =
+        document.createElement("div");
+
+      card.className =
+        "movie-card";
+
+
+      const poster =
+        movie.poster_url
+          ? escapeHtml(movie.poster_url)
+          : "";
+
+
+      card.innerHTML = `
+
+        <img
+          src="${poster}"
+          alt="${escapeHtml(movie.title || "Movie")}"
+        >
+
+        <div class="movie-info">
+
+          <h3>
+            ${escapeHtml(movie.title || "Untitled")}
+          </h3>
+
+          <div class="movie-meta">
+
+            ${escapeHtml(movie.genre || "Movie")}
+
+            ${
+              movie.release_year
+                ? " • " + movie.release_year
+                : ""
+            }
+
+          </div>
+
+        </div>
+
+      `;
+
+
+      card.addEventListener(
+        "click",
+        () => openMovie(movie)
+      );
+
+
+      movieGrid.appendChild(card);
+
+    });
+
+  }
+
+
+  /*
+   * SEARCH
+   */
+
+  document
+    .getElementById("searchInput")
+    .addEventListener(
+      "input",
+      function () {
+
+        const search =
+          this.value
+            .trim()
+            .toLowerCase();
+
+
+        if (!search) {
+
+          displayMovies(allMovies);
+
+          return;
+        }
+
+
+        const filtered =
+          allMovies.filter(movie => {
+
+            const title =
+              movie.title || "";
+
+            const description =
+              movie.description || "";
+
+            const cast =
+              movie.cast_members || "";
+
+            const genre =
+              movie.genre || "";
+
+
+            return (
+
+              title.toLowerCase()
+                .includes(search)
+
+              ||
+
+              description.toLowerCase()
+                .includes(search)
+
+              ||
+
+              cast.toLowerCase()
+                .includes(search)
+
+              ||
+
+              genre.toLowerCase()
+                .includes(search)
+
+            );
+
+          });
+
+
+        displayMovies(filtered);
+
+      }
+    );
+
+
+  /*
+   * OPEN MOVIE
+   */
+
+  function openMovie(movie) {
+
+    const modal =
+      document.getElementById("movieModal");
+
+    const detail =
+      document.getElementById("movieDetail");
+
+    const videoContainer =
+      document.getElementById("videoContainer");
+
+
+    detail.innerHTML = `
+
+      <div>
+
+        ${
+          movie.poster_url
+            ? `
+              <img
+                src="${escapeHtml(movie.poster_url)}"
+                alt="${escapeHtml(movie.title || "Movie")}"
+              >
+            `
+            : ""
+        }
+
+      </div>
+
+
+      <div>
+
+        <h2>
+          ${escapeHtml(movie.title || "Untitled")}
+        </h2>
+
+        <p class="detail-text">
+
+          <strong>Genre:</strong>
+          ${escapeHtml(movie.genre || "N/A")}
+
+          <br>
+
+          <strong>Release Year:</strong>
+          ${movie.release_year || "N/A"}
+
+          <br>
+
+          <strong>Cast:</strong>
+          ${escapeHtml(movie.cast_members || "N/A")}
+
+        </p>
+
+        <p class="detail-text">
+
+          ${escapeHtml(movie.description || "")}
+
+        </p>
+
+      </div>
+
+    `;
+
+
+    /*
+     * VIDEO PLAYER
+     */
+
+    if (movie.video_url) {
+
+      videoContainer.innerHTML = `
+
+        <video
+          controls
+          playsinline
+          preload="metadata"
+        >
+
+          <source
+            src="${escapeHtml(movie.video_url)}"
+          >
+
+          Your browser does not support video playback.
+
+        </video>
+
+      `;
+
+    } else {
+
+      videoContainer.innerHTML = `
+
+        <div class="no-video">
+
+          Video is currently unavailable.
+
+        </div>
+
+      `;
+
+    }
+
+
+    modal.classList.add("active");
+
+  }
+
+
+  /*
+   * CLOSE MODAL
+   */
+
+  document
+    .getElementById("closeModal")
+    .addEventListener(
+      "click",
+      closeModal
+    );
+
+
+  document
+    .getElementById("movieModal")
+    .addEventListener(
+      "click",
+      function(event) {
+
+        if (event.target === this) {
+
+          closeModal();
+
+        }
+
+      }
+    );
+
+
+  function closeModal() {
+
+    const modal =
+      document.getElementById("movieModal");
+
+    const videoContainer =
+      document.getElementById("videoContainer");
+
+
+    videoContainer.innerHTML = "";
+
+    modal.classList.remove("active");
+
+  }
+
+
+  /*
+   * HTML ESCAPE
+   */
+
+  function escapeHtml(value) {
+
+    return String(value)
+
+      .replace(
+        /&/g,
+        "&amp;"
+      )
+
+      .replace(
+        /</g,
+        "&lt;"
+      )
+
+      .replace(
+        />/g,
+        "&gt;"
+      )
+
+      .replace(
+        /"/g,
+        "&quot;"
+      )
+
+      .replace(
+        /'/g,
+        "&#039;"
+      );
+
+  }
+
+
+  /*
+   * START
+   */
+
+  loadMovies();
+
+</script>
+
+</body>
+</html>
